@@ -1,28 +1,22 @@
 import logging
-import voluptuous as vol
+import aiohttp
 from homeassistant.components.light import (
-    ATTR_BRIGHTNESS, ATTR_RGB_COLOR, LightEntity, PLATFORM_SCHEMA, SUPPORT_COLOR
+    ATTR_RGB_COLOR, LightEntity, COLOR_MODE_RGB
 )
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_USERNAME, CONF_PASSWORD
-import homeassistant.helpers.config_validation as cv
-
-# Definir configuración en configuration.yaml
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_HOST): cv.string,
-    vol.Required(CONF_PORT, default=8080): cv.port,
-    vol.Required(CONF_USERNAME): cv.string,
-    vol.Required(CONF_PASSWORD): cv.string,
-})
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 _LOGGER = logging.getLogger(__name__)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    host = config[CONF_HOST]
-    port = config[CONF_PORT]
-    username = config[CONF_USERNAME]
-    password = config[CONF_PASSWORD]
-    
-    api = SignalRGBAPI(host, port, username, password)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    """Configura la integración de luces a partir de una entrada de configuración."""
+    api = SignalRGBAPI(
+        entry.data["host"],
+        entry.data["port"],
+        entry.data["username"],
+        entry.data["password"],
+    )
     
     # Definir efectos disponibles
     effects = [
@@ -30,36 +24,32 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         {"name": "Solid Color", "properties": {"color": "color"}}
     ]
     
-    add_entities([RGBLight(api, effect) for effect in effects])
+    async_add_entities([RGBLight(api, effect) for effect in effects])
 
 class RGBLight(LightEntity):
+    """Clase que representa una luz RGB controlada por la API."""
+
     def __init__(self, api, effect):
+        """Inicializa la luz con el efecto especificado."""
         self._api = api
-        self._name = effect["name"]
+        self._attr_name = effect["name"]
         self._properties = effect["properties"]
-        self._state = False
-        self._color = (255, 255, 255)
+        self._attr_is_on = False
+        self._attr_color_mode = COLOR_MODE_RGB if "color" in self._properties else None
+        self._attr_supported_color_modes = {COLOR_MODE_RGB} if "color" in self._properties else set()
+        self._attr_rgb_color = (255, 255, 255)
 
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def is_on(self):
-        return self._state
-
-    @property
-    def supported_features(self):
-        return SUPPORT_COLOR if "color" in self._properties else 0
-
-    def turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs):
+        """Enciende la luz con el efecto actual."""
         params = {}
         if ATTR_RGB_COLOR in kwargs and "color" in self._properties:
             params["color"] = "%02x%02x%02x" % kwargs[ATTR_RGB_COLOR]
-        if self._api.set_effect(self._name, **params):
-            self._state = True
-            self.schedule_update_ha_state()
+        
+        if await self._api.set_effect(self._attr_name, **params):
+            self._attr_is_on = True
+            self.async_write_ha_state()
 
-    def turn_off(self, **kwargs):
-        self._state = False
-        self.schedule_update_ha_state()
+    async def async_turn_off(self, **kwargs):
+        """Apaga la luz."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
