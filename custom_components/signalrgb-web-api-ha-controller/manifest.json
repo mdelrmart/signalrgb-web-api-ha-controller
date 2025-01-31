@@ -1,0 +1,10 @@
+{
+    "domain": "signalrgb-web-api-ha-controller",
+    "name": "SignalRGB Web API Home Assistant Controller",
+    "version": "1.0.0",
+    "documentation": "https://github.com/myde2001/signalrgb-web-api-ha-controller",
+    "dependencies": [],
+    "codeowners": ["@myde2001"],
+    "requirements": []
+  }
+  

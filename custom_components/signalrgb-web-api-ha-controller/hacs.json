@@ -1,0 +1,7 @@
+{
+  "name": "SignalRGB Web API Home Assistant Controller",
+  "domain": "signalrgb-web-api-ha-controller",
+  "country": "Global",
+  "homeassistant": "2023.1.0",
+  "render_readme": true
+}
