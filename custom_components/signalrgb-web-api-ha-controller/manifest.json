@@ -5,6 +5,7 @@
     "documentation": "https://github.com/myde2001/signalrgb-web-api-ha-controller",
     "dependencies": [],
     "codeowners": ["@myde2001"],
-    "requirements": []
+    "requirements": [],
+	"config_flow": true
   }
   

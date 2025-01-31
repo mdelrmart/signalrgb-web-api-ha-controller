@@ -1,0 +1,1 @@
+DOMAIN = "signalrgb-web-api-ha-controller"
