@@ -9,22 +9,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    """Configura la integración de luces a partir de una entrada de configuración."""
-    api = SignalRGBAPI(
-        entry.data["host"],
-        entry.data["port"],
-        entry.data["username"],
-        entry.data["password"],
-    )
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Forzar la adición de entidades al iniciar."""
+    api = MiAPIRGB(entry.data["host"], entry.data["port"], entry.data["username"], entry.data["password"])
     
-    # Definir efectos disponibles
-    effects = [
-        {"name": "Color Cycle", "properties": {}},
-        {"name": "Solid Color", "properties": {"color": "color"}}
-    ]
-    
-    async_add_entities([RGBLight(api, effect) for effect in effects])
+    # Agregar al menos una luz manualmente para prueba
+    light = RGBLight(api, {"name": "Prueba"})
+    async_add_entities([light], update_before_add=True)
+
 
 class RGBLight(LightEntity):
     """Clase que representa una luz RGB controlada por la API."""
